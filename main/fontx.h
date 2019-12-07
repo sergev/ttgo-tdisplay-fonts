@@ -36,4 +36,3 @@ uint8_t RotateByte(uint8_t ch);
 //uint16_t UTF2SJIS(spiffs_file fd, uint8_t *utf8);
 //int String2SJIS(spiffs_file fd, unsigned char *str_in, size_t stlen, uint16_t *sjis, size_t ssize);
 #endif /* MAIN_FONTX_H_ */
-

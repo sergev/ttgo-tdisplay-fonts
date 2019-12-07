@@ -1,15 +1,30 @@
-#
-# This is a project Makefile. It is assumed the directory this Makefile resides in is a
-# project subdirectory.
-#
+# Generic makefile for ESP32 IDF project.
 
-PROJECT_NAME := st7789
+# Build the project.
+all:
+	if [ ! -f sdkconfig ]; then cp -a defconfig sdkconfig; idf.py fullclean; fi
+	idf.py build
 
-include $(IDF_PATH)/make/project.mk
+# Delete the entire build directory contents.
+clean:
+	idf.py fullclean
 
-# Create a SPIFFS image from the contents of the 'spiffs_image' directory
-# that fits the partition named 'storage'. FLASH_IN_PROJECT indicates that
-# the generated image should be flashed when the entire project is flashed to
-# the target with 'make flash'.
-SPIFFS_IMAGE_FLASH_IN_PROJECT := 1
-$(eval $(call spiffs_create_partition_image,storage,font))
+# Flash the project.
+flash:
+	idf.py flash
+
+# Print basic size information about the app.
+size:
+	idf.py size
+
+# Run "menuconfig" project configuration tool.
+menuconfig:
+	idf.py menuconfig
+
+# Re-run CMake.
+reconfigure:
+	idf.py reconfigure
+
+# Display serial output.
+monitor:
+	idf.py monitor

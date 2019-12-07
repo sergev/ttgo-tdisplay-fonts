@@ -1,3 +1,31 @@
+/*
+ * Interface to a color TFT display based on ST7789 controller.
+ * based on sources from https://github.com/nopnop2002/esp-idf-st7789
+ *
+ * Copyright (C) 2019 Serge Vakulenko
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *   1. Redistributions of source code must retain the above copyright notice,
+ *      this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *   3. The name of the author may not be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <string.h>
 #include <math.h>
 
@@ -84,7 +112,7 @@ void spi_master_init(TFT_t * dev, int16_t GPIO_MOSI, int16_t GPIO_SCLK, int16_t 
         } else {
                 devcfg.spics_io_num = -1;
         }
-	
+
 	spi_device_handle_t handle;
 	ret = spi_bus_add_device( HSPI_HOST, &devcfg, &handle);
 	ESP_LOGD(TAG, "spi_bus_add_device=%d",ret);
@@ -110,7 +138,7 @@ bool spi_master_write_byte(spi_device_handle_t SPIHandle, const uint8_t* Data, s
 #if 0
 		ret = spi_device_polling_transmit( SPIHandle, &SPITransaction );
 #endif
-		assert(ret==ESP_OK); 
+		assert(ret==ESP_OK);
 	}
 
 	return true;
@@ -188,11 +216,11 @@ void lcdInit(TFT_t * dev, int width, int height, int offsetx, int offsety)
 
 	spi_master_write_command(dev, 0x11);	//Power Control 2
 	delayMS(255);
-	
+
 	spi_master_write_command(dev, 0x3A);	//VCOM Control 1
 	spi_master_write_data_byte(dev, 0x55);
 	delayMS(10);
-	
+
 	spi_master_write_command(dev, 0x36);	//VCOM Control 2
 	spi_master_write_data_byte(dev, 0x00);
 
@@ -289,7 +317,7 @@ void lcdDrawFillRect(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16_
 void lcdDisplayOff(TFT_t * dev) {
 	spi_master_write_command(dev, 0x28);	//Display off
 }
- 
+
 // Display ON
 void lcdDisplayOn(TFT_t * dev) {
 	spi_master_write_command(dev, 0x29);	//Display on
@@ -306,7 +334,7 @@ void lcdFillScreen(TFT_t * dev, uint16_t color) {
 // y1:Start Y coordinate
 // x2:End X coordinate
 // y2:End Y coordinate
-// color:color 
+// color:color
 void lcdDrawLine(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
 	int i;
 	int dx,dy;
@@ -455,12 +483,12 @@ void lcdDrawCircle(TFT_t * dev, uint16_t x0, uint16_t y0, uint16_t r, uint16_t c
 	y=-r;
 	err=2-2*r;
 	do{
-		lcdDrawPixel(dev, x0-x, y0+y, color); 
-		lcdDrawPixel(dev, x0-y, y0-x, color); 
-		lcdDrawPixel(dev, x0+x, y0-y, color); 
-		lcdDrawPixel(dev, x0+y, y0+x, color); 
+		lcdDrawPixel(dev, x0-x, y0+y, color);
+		lcdDrawPixel(dev, x0-y, y0-x, color);
+		lcdDrawPixel(dev, x0+x, y0-y, color);
+		lcdDrawPixel(dev, x0+y, y0+x, color);
 		if ((old_err=err)<=x)   err+=++x*2+1;
-		if (old_err>y || err>x) err+=++y*2+1;    
+		if (old_err>y || err>x) err+=++y*2+1;
 	} while(y<0);
 }
 
@@ -489,7 +517,7 @@ void lcdDrawFillCircle(TFT_t * dev, uint16_t x0, uint16_t y0, uint16_t r, uint16
 		if (ChangeX)            err+=++x*2+1;
 		if (old_err>y || err>x) err+=++y*2+1;
 	} while(y<=0);
-} 
+}
 
 // Draw rectangle with round corner
 // x1:Start X coordinate
@@ -508,7 +536,7 @@ void lcdDrawRoundRect(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16
 	if(x1>x2) {
 		temp=x1; x1=x2; x2=temp;
 	} // endif
-	  
+
 	if(y1>y2) {
 		temp=y1; y1=y2; y2=temp;
 	} // endif
@@ -524,13 +552,13 @@ void lcdDrawRoundRect(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16
 
 	do{
 		if(x) {
-			lcdDrawPixel(dev, x1+r-x, y1+r+y, color); 
-			lcdDrawPixel(dev, x2-r+x, y1+r+y, color); 
-			lcdDrawPixel(dev, x1+r-x, y2-r-y, color); 
+			lcdDrawPixel(dev, x1+r-x, y1+r+y, color);
+			lcdDrawPixel(dev, x2-r+x, y1+r+y, color);
+			lcdDrawPixel(dev, x1+r-x, y2-r-y, color);
 			lcdDrawPixel(dev, x2-r+x, y2-r-y, color);
-		} // endif 
+		} // endif
 		if ((old_err=err)<=x)   err+=++x*2+1;
-		if (old_err>y || err>x) err+=++y*2+1;    
+		if (old_err>y || err>x) err+=++y*2+1;
 	} while(y<0);
 
 	ESP_LOGD(TAG, "x1+r=%d x2-r=%d",x1+r, x2-r);
@@ -538,8 +566,8 @@ void lcdDrawRoundRect(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16
 	lcdDrawLine(dev, x1+r,y2  ,x2-r,y2  ,color);
 	ESP_LOGD(TAG, "y1+r=%d y2-r=%d",y1+r, y2-r);
 	lcdDrawLine(dev, x1  ,y1+r,x1  ,y2-r,color);
-	lcdDrawLine(dev, x2  ,y1+r,x2  ,y2-r,color);  
-} 
+	lcdDrawLine(dev, x2  ,y1+r,x2  ,y2-r,color);
+}
 
 // Draw arrow
 // x1:Start X coordinate

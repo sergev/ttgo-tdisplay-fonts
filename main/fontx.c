@@ -197,7 +197,7 @@ uint8_t getFortHeight(FontxFile *fx) {
 
 bool GetFontx(FontxFile *fxs, uint8_t ascii , uint8_t *pGlyph, uint8_t *pw, uint8_t *ph)
 {
-  
+
 	int i;
 	uint32_t offset;
 
@@ -206,7 +206,7 @@ bool GetFontx(FontxFile *fxs, uint8_t ascii , uint8_t *pGlyph, uint8_t *pw, uint
 	//for(i=0; i<1; i++){
 		if(!OpenFontx(&fxs[i])) continue;
 		if(FontxDebug)printf("[GetFontx]openFontxFile[%d] ok\n",i);
-	
+
 		//if(ascii < 0x100){
 		if(ascii < 0x80){
 			if(fxs[i].is_ank){
@@ -236,7 +236,7 @@ if(FontxDebug)printf("[GetFontx]offset=%d\n",offset);
 				}
 				uint16_t buf[2], nc = 0, bc = fxs[i].bc;
 
-				while(bc--){ 
+				while(bc--){
 					if(fread((char *)buf, 1, 4, fxs[i].file) != 4) {
 						printf("Fontx:fread failed.\n");
 						return false;
@@ -289,7 +289,7 @@ if(FontxDebug)printf("[GetFontx]buf=0x%x-0x%x\n",buf[0],buf[1]);
  14 pGlyph[026] pGlyph[027]
  15 pGlyph[028] pGlyph[029]
  16 pGlyph[030] pGlyph[031]
-              
+
  line[32*4]
  01 line[000] line[001] line[002] .... line[014] line[015] line[016-031]
  |                                                         Not Use
@@ -328,7 +328,7 @@ if(FontxDebug)printf("[GetFontx]buf=0x%x-0x%x\n",buf[0],buf[1]);
  22 pGlyph[063] pGlyph[064] pGlyph[065]
  23 pGlyph[066] pGlyph[067] pGlyph[068]
  24 pGlyph[069] pGlyph[070] pGlyph[071]
-              
+
  line[32*4]
  01 line[000] line[001] line[002] .... line[022] line[023] line[024-031]
  |                                                         Not Use
@@ -378,7 +378,7 @@ if(FontxDebug)printf("[GetFontx]buf=0x%x-0x%x\n",buf[0],buf[1]);
  30 pGlyph[116] pGlyph[117] pGlyph[118] pGlyph[119]
  31 pGlyph[120] pGlyph[121] pGlyph[122] pGlyph[123]
  32 pGlyph[124] pGlyph[125] pGlyph[127] pGlyph[128]
-              
+
  line[32*4]
  01 line[000] line[001] line[002] .... line[030] line[031]
  |
@@ -524,7 +524,7 @@ uint16_t UTF2SJIS(spiffs_file fd, uint8_t *utf8) {
   uint32_t offset = 0;
   uint32_t ret;
   uint32_t UTF8uint = utf8[0]*256*256 + utf8[1]*256 + utf8[2];
-   
+
   if(utf8[0]>=0xC2 && utf8[0]<=0xD1){ //0xB0からS_JISコード実データ。0x00-0xAFまではライセンス文ヘッダなのでそれをカット。
     offset = ((utf8[0]*256 + utf8[1])-0xC2A2)*2 + 0xB0; //文字"￠" UTF8コード C2A2～、S_jisコード8191
   }else if(utf8[0]==0xE2 && utf8[1]>=0x80){
@@ -616,4 +616,3 @@ if(FontxDebug)printf("[String2SJIS]ANK %x\n",sp);
   return spos;
 }
 #endif
-
