@@ -140,6 +140,13 @@ void tft_text(const struct tft_font_t *font, int color, int background, int x, i
 int tft_text_width(const struct tft_font_t *font, const char *text, int nchars);
 
 //
+// Draw a glyph of one symbol.
+//
+void tft_glyph(const tft_font_t *font,
+    int color, int background, int x, int y, int width,
+    const unsigned short *bits);
+
+//
 // RGB565 conversion.
 // RGB565 is 16bit color format: "RRRRRGGGGGGBBBBB"
 //
@@ -153,6 +160,6 @@ int tft_text_width(const struct tft_font_t *font, const char *text, int nchars);
 #define COLOR_BLUE      0x001f
 #define COLOR_YELLOW    0xffe0
 #define COLOR_CYAN      0x07ff
-#define COLOR_PURPLE    0xf81f
+#define COLOR_MAGENTA   0xf81f
 
 #endif /* _TFT_H_ */

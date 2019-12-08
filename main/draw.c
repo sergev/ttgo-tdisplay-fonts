@@ -279,40 +279,6 @@ void tft_circle(int color, int x0, int y0, int radius)
 }
 
 //
-// Draw a glyph of one symbol.
-//
-static void tft_glyph(const tft_font_t *font,
-    int color, int background, int x, int y, int width,
-    const unsigned short *bits)
-{
-    int h, w;
-
-    if (x + width > tft.width || y + font->height > tft.height)
-        return;
-
-    if (background >= 0) {
-        // Update background.
-        tft_fill(background, x, y, x + width - 1, y + font->height - 1);
-    }
-
-    // Loop on each glyph row.
-    for (h=0; h<font->height; h++) {
-        unsigned bitmask = 0;
-
-        // Loop on every pixel in the row (left to right).
-        for (w=0; w<width; w++) {
-            if ((w & 15) == 0)
-                bitmask = *bits++;
-            else
-                bitmask <<= 1;
-
-            if (bitmask & 0x8000)
-                tft_pixel(color, x + w, y + h);
-        }
-    }
-}
-
-//
 // Draw a character from a specified font.
 //
 void tft_char(const tft_font_t *font,

@@ -65,6 +65,17 @@ enum {
     Cmd_Memory_Write                = 0x2c,
     Cmd_Memory_Data_Access_Control  = 0x36,
     Cmd_Interface_Pixel_Format      = 0x3a,
+    Cmd_Porch_Control               = 0xb2,
+    Cmd_Gate_Control                = 0xb7,
+    Cmd_VCOMS_Setting               = 0xbb,
+    Cmd_LCM_Control                 = 0xc0,
+    Cmd_VDV_VRH_Command_Enable      = 0xc2,
+    Cmd_VRH_Set                     = 0xc3,
+    Cmd_VDV_Setting                 = 0xc4,
+    Cmd_FR_Control_2                = 0xc6,
+    Cmd_Power_Control_1             = 0xd0,
+    Cmd_Positive_Gamma_Control      = 0xe0,
+    Cmd_Negative_Gamma_Control      = 0xe1,
 };
 
 tft_t tft;
@@ -141,29 +152,6 @@ static inline void mdelay(int ms)
 //
 int tft_init(int portrait, int color, int *xsize, int *ysize)
 {
-    *xsize = CONFIG_WIDTH;
-    *ysize = CONFIG_HEIGHT;
-
-    gpio_pad_select_gpio(CONFIG_CS_GPIO);
-    gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(CONFIG_CS_GPIO, 0);
-
-    gpio_pad_select_gpio(CONFIG_DC_GPIO);
-    gpio_set_direction(CONFIG_DC_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(CONFIG_DC_GPIO, 0);
-
-    gpio_pad_select_gpio(CONFIG_RESET_GPIO);
-    gpio_set_direction(CONFIG_RESET_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(CONFIG_RESET_GPIO, 1);
-    mdelay(50);
-    gpio_set_level(CONFIG_RESET_GPIO, 0);
-    mdelay(50);
-    gpio_set_level(CONFIG_RESET_GPIO, 1);
-    mdelay(50);
-
-    gpio_set_direction(CONFIG_BL_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(CONFIG_BL_GPIO, 0);
-
     spi_bus_config_t buscfg = {
         .sclk_io_num    = CONFIG_SCLK_GPIO,
         .mosi_io_num    = CONFIG_MOSI_GPIO,
@@ -188,46 +176,145 @@ int tft_init(int portrait, int color, int *xsize, int *ysize)
         return -1;
     }
 
-    tft.width = CONFIG_WIDTH;
-    tft.height = CONFIG_HEIGHT;
-    tft.offsetx = CONFIG_OFFSETX;
-    tft.offsety = CONFIG_OFFSETY;
+    gpio_pad_select_gpio(CONFIG_CS_GPIO);
+    gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(CONFIG_CS_GPIO, 0);
 
-    tft_send_command(Cmd_Software_Reset);
-    mdelay(150);
+    gpio_pad_select_gpio(CONFIG_DC_GPIO);
+    gpio_set_direction(CONFIG_DC_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(CONFIG_DC_GPIO, 0);
+
+    gpio_pad_select_gpio(CONFIG_RESET_GPIO);
+    gpio_set_direction(CONFIG_RESET_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(CONFIG_RESET_GPIO, 1);
+    mdelay(50);
+    gpio_set_level(CONFIG_RESET_GPIO, 0);
+    mdelay(50);
+    gpio_set_level(CONFIG_RESET_GPIO, 1);
+    mdelay(50);
+
+    gpio_set_direction(CONFIG_BL_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(CONFIG_BL_GPIO, 0);
 
     tft_send_command(Cmd_Sleep_Out);
-    mdelay(255);
+    mdelay(120);
 
     tft_send_command(Cmd_Interface_Pixel_Format);
     tft_send_byte(0x55);
     mdelay(10);
 
+    // Rotate the coordinates.
     tft_send_command(Cmd_Memory_Data_Access_Control);
-    tft_send_byte(0x00);
+    if (portrait) {
+        // Portrait
+        tft.width   = CONFIG_WIDTH;
+        tft.height  = CONFIG_HEIGHT;
+        tft.offsetx = CONFIG_OFFSETX;
+        tft.offsety = CONFIG_OFFSETY;
+        tft_send_byte(0x00);            // RGB
 
-    tft_send_command(Cmd_Column_Address_Set);
-    tft_send_byte(0x00);
-    tft_send_byte(0x00);
-    tft_send_byte(0x00);
-    tft_send_byte(0xF0);
+        //TODO: Inverted portrait
+        //tft.offsetx = CONFIG_OFFSETX + 1;
+        //tft_send_byte(0xc0);          // MY, MX
+    } else {
+        // Landscape (Portrait + 90)
+        tft.width   = CONFIG_HEIGHT;
+        tft.height  = CONFIG_WIDTH;
+        tft.offsetx = CONFIG_OFFSETY;
+        tft.offsety = CONFIG_OFFSETX + 1;
+        tft_send_byte(0x60);            // MX, MV
 
-    tft_send_command(Cmd_Row_Address_Set);
-    tft_send_byte(0x00);
-    tft_send_byte(0x00);
-    tft_send_byte(0x00);
-    tft_send_byte(0xF0);
+        //TODO: Inverted landscape
+        //tft.offsety = CONFIG_OFFSETX;
+        //tft_send_byte(0xa0);          // MY, MV
+    }
 
     tft_send_command(Cmd_Display_Inversion_On);
-    mdelay(10);
 
     tft_send_command(Cmd_Partial_Mode_Off);
-    mdelay(10);
+
+    // JLX240 display datasheet.
+    tft_send_command(0xB6);
+    tft_send_byte(0x0A);
+    tft_send_byte(0x82);
+
+    // Frame rate setting.
+    tft_send_command(Cmd_Porch_Control);
+    tft_send_byte(0x0c);
+    tft_send_byte(0x0c);
+    tft_send_byte(0x00);
+    tft_send_byte(0x33);
+    tft_send_byte(0x33);
+
+    tft_send_command(Cmd_Gate_Control); // Voltages: VGH / VGL
+    tft_send_byte(0x35);
+
+    // Power setting.
+    tft_send_command(Cmd_VCOMS_Setting);
+    tft_send_byte(0x28);                // JLX240 display datasheet
+
+    tft_send_command(Cmd_LCM_Control);
+    tft_send_byte(0x0C);
+
+    tft_send_command(Cmd_VDV_VRH_Command_Enable);
+    tft_send_byte(0x01);
+    tft_send_byte(0xFF);
+
+    tft_send_command(Cmd_VRH_Set);      // Voltage
+    tft_send_byte(0x10);
+
+    tft_send_command(Cmd_VDV_Setting);
+    tft_send_byte(0x20);
+
+    tft_send_command(Cmd_FR_Control_2);
+    tft_send_byte(0x0f);
+
+    tft_send_command(Cmd_Power_Control_1);
+    tft_send_byte(0xa4);
+    tft_send_byte(0xa1);
+
+    // Gamma setting.
+    tft_send_command(Cmd_Positive_Gamma_Control);
+    tft_send_byte(0xd0);
+    tft_send_byte(0x00);
+    tft_send_byte(0x02);
+    tft_send_byte(0x07);
+    tft_send_byte(0x0a);
+    tft_send_byte(0x28);
+    tft_send_byte(0x32);
+    tft_send_byte(0x44);
+    tft_send_byte(0x42);
+    tft_send_byte(0x06);
+    tft_send_byte(0x0e);
+    tft_send_byte(0x12);
+    tft_send_byte(0x14);
+    tft_send_byte(0x17);
+
+    tft_send_command(Cmd_Negative_Gamma_Control);
+    tft_send_byte(0xd0);
+    tft_send_byte(0x00);
+    tft_send_byte(0x02);
+    tft_send_byte(0x07);
+    tft_send_byte(0x0a);
+    tft_send_byte(0x28);
+    tft_send_byte(0x31);
+    tft_send_byte(0x54);
+    tft_send_byte(0x47);
+    tft_send_byte(0x0e);
+    tft_send_byte(0x1c);
+    tft_send_byte(0x17);
+    tft_send_byte(0x1b);
+    tft_send_byte(0x1e);
 
     tft_send_command(Cmd_Display_On);
     mdelay(255);
 
     gpio_set_level(CONFIG_BL_GPIO, 1);
+
+    tft_clear(color);
+
+    *xsize = tft.width;
+    *ysize = tft.height;
     return 0;
 }
 
@@ -345,5 +432,69 @@ void tft_invert(int on)
         tft_send_command(Cmd_Display_Inversion_On);
     } else {
         tft_send_command(Cmd_Display_Inversion_Off);
+    }
+}
+
+//
+// Draw a glyph of one symbol.
+//
+void tft_glyph(const tft_font_t *font,
+    int color, int background, int x, int y, int width,
+    const unsigned short *bits)
+{
+    int h, w;
+    unsigned bitmask = 0;
+
+    if (x + width > tft.width || y + font->height > tft.height)
+        return;
+
+    if (background >= 0) {
+        //
+        // Update background.
+        //
+        int npixels = width * font->height;
+        uint16_t image[npixels];
+
+        // Loop on each glyph row.
+        for (h=0; h<font->height; h++) {
+            // Loop on every pixel in the row (left to right).
+            for (w=0; w<width; w++) {
+                if ((w & 15) == 0)
+                    bitmask = *bits++;
+                else
+                    bitmask <<= 1;
+
+                image[w + h*width] = (bitmask & 0x8000) ? color : background;
+            }
+        }
+
+        x += tft.offsetx;
+        y += tft.offsety;
+
+        tft_send_command(Cmd_Column_Address_Set);
+        tft_send_addr(x, x + width - 1);
+        tft_send_command(Cmd_Row_Address_Set);
+        tft_send_addr(y, y + font->height - 1);
+        tft_send_command(Cmd_Memory_Write);
+
+        gpio_set_level(CONFIG_DC_GPIO, 1); // data mode
+        tft_send((uint8_t*) image, npixels * 2);
+    } else {
+        //
+        // Transparent background.
+        //
+        // Loop on each glyph row.
+        for (h=0; h<font->height; h++) {
+            // Loop on every pixel in the row (left to right).
+            for (w=0; w<width; w++) {
+                if ((w & 15) == 0)
+                    bitmask = *bits++;
+                else
+                    bitmask <<= 1;
+
+                if (bitmask & 0x8000)
+                    tft_pixel(color, x + w, y + h);
+            }
+        }
     }
 }
