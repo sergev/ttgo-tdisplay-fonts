@@ -31,8 +31,8 @@
 typedef struct {
     int width, height;      // Screen size
     int col, row;           // Current position for text
-    unsigned char *image;
-    int image_size;
+    int offsetx, offsety;
+    void *spidev;
 } tft_t;
 
 extern tft_t tft;
@@ -61,6 +61,21 @@ typedef struct tft_font_t {
 // Return a size of the screen in pixels.
 //
 int tft_init(int rotate, int color, int *xsize, int *ysize);
+
+//
+// Enable or disable the display.
+//
+void tft_enable(int on);
+
+//
+// Enable or disable the backlight.
+//
+void tft_backlight(int on);
+
+//
+// Invert the display.
+//
+void tft_invert(int on);
 
 //
 // Send updated image to the screen.
@@ -93,6 +108,11 @@ void tft_fill(int color, int x0, int y0, int x1, int y1);
 void tft_rect(int color, int x0, int y0, int x1, int y1);
 
 //
+// Draw a rounded rectangular frame.
+//
+void tft_round_rect(int color, int x0, int y0, int x1, int y1, int radius);
+
+//
 // Fill a triangle.
 //
 void tft_fill_triangle(int color, int x0, int y0, int x1, int y1, int x2, int y2);
@@ -119,4 +139,20 @@ void tft_text(const struct tft_font_t *font, int color, int background, int x, i
 //
 int tft_text_width(const struct tft_font_t *font, const char *text, int nchars);
 
-#endif
+//
+// RGB565 conversion.
+// RGB565 is 16bit color format: "RRRRRGGGGGGBBBBB"
+//
+#define COLOR_RGB(r, g, b) (((r) >> 3 << 11) | ((g) >> 2 << 5) | ((b) >> 3))
+
+#define COLOR_BLACK     0x0000
+#define COLOR_WHITE     0xffff
+#define COLOR_GRAY      0x8c51
+#define COLOR_RED       0xf800
+#define COLOR_GREEN     0x07e0
+#define COLOR_BLUE      0x001f
+#define COLOR_YELLOW    0xffe0
+#define COLOR_CYAN      0x07ff
+#define COLOR_PURPLE    0xf81f
+
+#endif /* _TFT_H_ */

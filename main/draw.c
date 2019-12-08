@@ -29,61 +29,6 @@
 #include "tft.h"
 
 //
-// Draw one pixel
-//
-void tft_pixel(int color, int x, int y)
-{
-    uint32_t y_bit = (y & 7);
-
-    /*
-     * We only need to modify the Y coordinate since the pitch
-     * of the screen is the same as the width.
-     * Dividing y by 8 gives us which row the pixel is in but not
-     * the bit position.
-     */
-    y >>= 3;
-
-    uint8_t *ptr = tft.image + (y * tft.width) + x;
-    if (color)
-        *ptr |= 1 << y_bit;
-    else
-        *ptr &= ~(1 << y_bit);
-}
-
-//
-// Fill rectangle.
-//
-void tft_fill(int color, int x0, int y0, int x1, int y1)
-{
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) x0 = 0;
-    if (x1 < 0) x1 = 0;
-    if (y1 < 0) x1 = 0;
-    if (x0 >= tft.width) x0 = tft.width-1;
-    if (x1 >= tft.width) x1 = tft.width-1;
-    if (y0 >= tft.height) y0 = tft.height-1;
-    if (y1 >= tft.height) y1 = tft.height-1;
-
-    if (x1 < x0) {
-        int t = x0;
-        x0 = x1;
-        x1 = t;
-    }
-    if (y1 < y0) {
-        int t = y0;
-        y0 = y1;
-        y1 = t;
-    }
-
-    int x, y;
-    for (y = y0; y <= y1; y++) {
-        for (x = x0; x <= x1; x++) {
-            tft_pixel(color, x, y);
-        }
-    }
-}
-
-//
 // Draw a line.
 //
 void tft_line(int color, int x0, int y0, int x1, int y1)
@@ -147,6 +92,53 @@ void tft_rect(int color, int x0, int y0, int x1, int y1)
     tft_fill(color, x0, y1, x1, y1);
     tft_fill(color, x0, y0, x0, y1);
     tft_fill(color, x1, y0, x1, y1);
+}
+
+//
+// Draw a rounded rectangular frame.
+//
+void tft_round_rect(int color, int x1, int y1, int x2, int y2, int r)
+{
+    if (x1 > x2) {
+        int temp = x1;
+        x1 = x2;
+        x2 = temp;
+    }
+
+    if (y1 > y2) {
+        int temp = y1;
+        y1 = y2;
+        y2 = temp;
+    }
+
+    if (x2 - x1 < r)
+        return;
+    if (y2 - y1 < r)
+        return;
+
+    int x = 0;
+    int y = -r;
+    int err = 2 - 2*r;
+
+    do {
+        int old_err = err;
+
+        if (x) {
+            tft_pixel(color, x1+r-x, y1+r+y);
+            tft_pixel(color, x2-r+x, y1+r+y);
+            tft_pixel(color, x1+r-x, y2-r-y);
+            tft_pixel(color, x2-r+x, y2-r-y);
+        }
+        if (err <= x)
+            err += ++x * 2 + 1;
+        if (old_err > y || err > x)
+            err += ++y * 2 + 1;
+    } while (y < 0);
+
+    tft_line(color, x1+r, y1,   x2-r, y1);
+    tft_line(color, x1+r, y2,   x2-r, y2);
+    tft_line(color, x1,   y1+r, x1,   y2-r);
+    tft_line(color, x2,   y1+r, x2,   y2-r);
 }
 
 //

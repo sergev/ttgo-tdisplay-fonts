@@ -68,6 +68,8 @@
 
 tft_t tft;
 
+static unsigned char tft_image[TFT_WIDTH * TFT_HEIGHT / 8];
+
 //
 // SSD1306 commands.
 //
@@ -233,18 +235,18 @@ void tft_set_display_address_mode(tft_address_mode_t addressMode)
 //
 void tft_clear(int color)
 {
-    memset(tft.image, color ? 0xff : 0, tft.image_size);
+    memset(tft_image, color ? 0xff : 0, sizeof(tft_image));
 }
 
 void tft_update()
 {
-    tft_send_data(tft.image, tft.image_size);
+    tft_send_data(tft_image, sizeof(tft_image));
 }
 
 void tft_write_raw_data(uint8_t *data, size_t nbytes)
 {
-    if (nbytes > tft.image_size) {
-        nbytes = tft.image_size;
+    if (nbytes > sizeof(tft_image)) {
+        nbytes = sizeof(tft_image);
     }
     if (nbytes > 0) {
         tft_send_data(data, nbytes);
@@ -333,14 +335,7 @@ int tft_init(int portrait, int color, int *xsize, int *ysize)
     // Initialize SSD1306 chip.
     //
     memset(&tft, 0, sizeof(tft));
-    tft.image_size = (TFT_WIDTH * TFT_HEIGHT) / 8;
-
-    tft.image = (uint8_t*) malloc(tft.image_size);
-    if (!tft.image) {
-        printf("Failed to allocate frame buffer!\n");
-        return -1;
-    }
-    memset(tft.image, 0, tft.image_size);
+    memset(tft_image, 0, sizeof(tft_image));
 
     tft_reset();
 
@@ -380,4 +375,59 @@ int tft_init(int portrait, int color, int *xsize, int *ysize)
     *xsize = tft.width;
     *ysize = tft.height;
     return 0;
+}
+
+//
+// Draw one pixel
+//
+void tft_pixel(int color, int x, int y)
+{
+    uint32_t y_bit = (y & 7);
+
+    /*
+     * We only need to modify the Y coordinate since the pitch
+     * of the screen is the same as the width.
+     * Dividing y by 8 gives us which row the pixel is in but not
+     * the bit position.
+     */
+    y >>= 3;
+
+    uint8_t *ptr = tft_image + (y * tft.width) + x;
+    if (color)
+        *ptr |= 1 << y_bit;
+    else
+        *ptr &= ~(1 << y_bit);
+}
+
+//
+// Fill rectangle.
+//
+void tft_fill(int color, int x0, int y0, int x1, int y1)
+{
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) x0 = 0;
+    if (x1 < 0) x1 = 0;
+    if (y1 < 0) x1 = 0;
+    if (x0 >= tft.width) x0 = tft.width-1;
+    if (x1 >= tft.width) x1 = tft.width-1;
+    if (y0 >= tft.height) y0 = tft.height-1;
+    if (y1 >= tft.height) y1 = tft.height-1;
+
+    if (x1 < x0) {
+        int t = x0;
+        x0 = x1;
+        x1 = t;
+    }
+    if (y1 < y0) {
+        int t = y0;
+        y0 = y1;
+        y1 = t;
+    }
+
+    int x, y;
+    for (y = y0; y <= y1; y++) {
+        for (x = x0; x <= x1; x++) {
+            tft_pixel(color, x, y);
+        }
+    }
 }

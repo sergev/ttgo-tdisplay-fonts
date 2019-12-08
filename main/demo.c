@@ -129,12 +129,12 @@ void show(const tft_font_t *font, const char *title, int digits_only)
     const char *phrase = digits_only ? "0123456789" :
                          "The quick brown fox jumps over the lazy dog.";
 
-    tft_clear(0);
-    tft_text(&font_tahoma10, 1, 0, x, y, title);
-    y += font_tahoma10.height;
+    tft_clear(COLOR_BLACK);
+    tft_text(&font_tahoma12, COLOR_WHITE, COLOR_BLACK, x, y, title);
+    y += font_tahoma12.height;
 
     for (i=0; y<ysize; i++) {
-        tft_text(font, 1, 0, x, y, phrase);
+        tft_text(font, COLOR_WHITE, COLOR_BLACK, x, y, phrase);
         y += font->height;
     }
     tft_update();

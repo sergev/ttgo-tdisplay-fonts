@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_err.h>
@@ -9,19 +8,17 @@
 #include <esp_system.h>
 #include <esp_vfs.h>
 #include <esp_spiffs.h>
-
-#include "st7789.h"
+#include "tft.h"
 
 int xsize, ysize;
 
 void FillTest()
 {
-    lcdFillScreen(RED);
+    tft_clear(COLOR_RED);
     vTaskDelay(50);
-    lcdFillScreen(GREEN);
+    tft_clear(COLOR_GREEN);
     vTaskDelay(50);
-    lcdFillScreen(BLUE);
-    vTaskDelay(50);
+    tft_clear(COLOR_BLUE);
 }
 
 void ColorBarTest()
@@ -30,142 +27,96 @@ void ColorBarTest()
         uint16_t y1,y2;
         y1 = ysize/3;
         y2 = (ysize/3)*2;
-        lcdDrawFillRect(0, 0, xsize-1, y1-1, RED);
+        tft_fill(COLOR_RED, 0, 0, xsize-1, y1-1);
         vTaskDelay(1);
-        lcdDrawFillRect(0, y1-1, xsize-1, y2-1, GREEN);
+        tft_fill(COLOR_GREEN, 0, y1-1, xsize-1, y2-1);
         vTaskDelay(1);
-        lcdDrawFillRect(0, y2-1, xsize-1, ysize-1, BLUE);
+        tft_fill(COLOR_BLUE, 0, y2-1, xsize-1, ysize-1);
     } else {
         uint16_t x1,x2;
         x1 = xsize/3;
         x2 = (xsize/3)*2;
-        lcdDrawFillRect(0, 0, x1-1, ysize-1, RED);
+        tft_fill(COLOR_RED, 0, 0, x1-1, ysize-1);
         vTaskDelay(1);
-        lcdDrawFillRect(x1-1, 0, x2-1, ysize-1, GREEN);
+        tft_fill(COLOR_GREEN, x1-1, 0, x2-1, ysize-1);
         vTaskDelay(1);
-        lcdDrawFillRect(x2-1, 0, xsize-1, ysize-1, BLUE);
+        tft_fill(COLOR_BLUE, x2-1, 0, xsize-1, ysize-1);
     }
 }
 
 void LineTest()
 {
     uint16_t color;
-    lcdFillScreen(BLACK);
-    color = RED;
+    tft_clear(COLOR_BLACK);
+    color = COLOR_RED;
     for (int ypos = 0; ypos < ysize; ypos = ypos+10) {
-        lcdDrawLine(0, ypos, xsize, ypos, color);
+        tft_line(color, 0, ypos, xsize, ypos);
     }
 
     for (int xpos = 0; xpos < xsize; xpos = xpos+10) {
-        lcdDrawLine(xpos, 0, xpos, ysize, color);
-    }
-}
-
-void CircleTest()
-{
-    uint16_t color;
-    lcdFillScreen(BLACK);
-    color = CYAN;
-    uint16_t xpos = xsize/2;
-    uint16_t ypos = ysize/2;
-    for (int i = 5; i < ysize; i = i+5) {
-        lcdDrawCircle(xpos, ypos, i, color);
-    }
-}
-
-void RectAngleTest()
-{
-    uint16_t color;
-    lcdFillScreen(BLACK);
-    color = CYAN;
-    uint16_t xpos = xsize/2;
-    uint16_t ypos = ysize/2;
-
-    uint16_t w = xsize * 0.6;
-    uint16_t h = w * 0.5;
-    int angle;
-    for (angle = 0; angle <= 360*3; angle = angle+30) {
-        lcdDrawRectAngle(xpos, ypos, w, h, angle, color);
-        usleep(10000);
-        lcdDrawRectAngle(xpos, ypos, w, h, angle, BLACK);
-    }
-
-    for (angle = 0; angle <= 180; angle = angle+30) {
-        lcdDrawRectAngle(xpos, ypos, w, h, angle, color);
-    }
-}
-
-void TriangleTest()
-{
-    uint16_t color;
-    lcdFillScreen(BLACK);
-    color = CYAN;
-    uint16_t xpos = xsize/2;
-    uint16_t ypos = ysize/2;
-
-    uint16_t w = xsize * 0.6;
-    uint16_t h = w * 1.0;
-    int angle;
-
-    for (angle = 0; angle <= 360*3; angle = angle+30) {
-        lcdDrawTriangle(xpos, ypos, w, h, angle, color);
-        usleep(10000);
-        lcdDrawTriangle(xpos, ypos, w, h, angle, BLACK);
-    }
-
-    for (angle = 0; angle <= 360; angle = angle+30) {
-        lcdDrawTriangle(xpos, ypos, w, h, angle, color);
+        tft_line(color, xpos, 0, xpos, ysize);
     }
 }
 
 void RoundRectTest()
 {
-    uint16_t color;
     uint16_t limit = xsize;
+
     if (xsize > ysize)
         limit = ysize;
+    tft_clear(COLOR_BLACK);
 
-    lcdFillScreen(BLACK);
-    color = BLUE;
-    for (int i = 5; i < limit; i = i+5) {
+    for (int i = 5; i < limit; i += 5) {
         if (i > limit - i - 1)
             break;
-        lcdDrawRoundRect(i, i, (xsize-i-1), (ysize-i-1), 10, color);
+
+        tft_round_rect(COLOR_BLUE, i, i, xsize - i - 1, ysize - i - 1, 10);
     }
 }
 
 void FillRectTest()
 {
-    uint16_t color;
-    lcdFillScreen(CYAN);
-
-    uint16_t red;
-    uint16_t green;
-    uint16_t blue;
-    srand((unsigned int) time(NULL));
+    tft_clear(COLOR_CYAN);
     for (int i = 1; i < 100; i++) {
-        red = rand()%255;
-        green = rand()%255;
-        blue = rand()%255;
-        color = rgb565_conv(red, green, blue);
-        uint16_t xpos = rand()%xsize;
-        uint16_t ypos = rand()%ysize;
-        uint16_t size = rand()%(xsize/5);
-        lcdDrawFillRect(xpos, ypos, xpos+size, ypos+size, color);
+        int red = rand() & 255;
+        int green = rand() & 255;
+        int blue = rand() & 255;
+        int color = COLOR_RGB(red, green, blue);
+        int xpos = rand() % xsize;
+        int ypos = rand() % ysize;
+        int size = rand() % (xsize / 5);
+
+        tft_fill(color, xpos, ypos, xpos + size, ypos + size);
     }
 }
 
 void ColorTest()
 {
-    uint16_t color;
-    lcdFillScreen(WHITE);
-    color = RED;
+    static const int color[16] = {
+        COLOR_RGB(255, 0,   0),     // red
+        COLOR_RGB(255, 255, 0),     // yellow
+        COLOR_RGB(0,   255, 0),     // green
+        COLOR_RGB(0,   255, 255),   // cyan
+        COLOR_RGB(0,   0,   255),   // blue
+        COLOR_RGB(255, 127, 0),
+        COLOR_RGB(127, 255, 0),
+        COLOR_RGB(0,   255, 127),
+        COLOR_RGB(0,   127, 255),
+        COLOR_RGB(127, 0,   255),
+        COLOR_RGB(255, 0,   127),
+        COLOR_RGB(255, 127, 127),
+        COLOR_RGB(127, 255, 127),
+        COLOR_RGB(127, 127, 255),
+        COLOR_RGB(127, 127, 127),   // gray
+        COLOR_RGB(255, 255, 255),   // white
+    };
     uint16_t delta = ysize/16;
     uint16_t ypos = 0;
+
+    tft_clear(COLOR_WHITE);
     for (int i = 0; i < 16; i++) {
-        lcdDrawFillRect(0, ypos, xsize-1, ypos+delta, color);
-        color = color >> 1;
-        ypos = ypos + delta;
+        tft_fill(color[i], 0, ypos, xsize-1, ypos+delta);
+        ypos += delta;
     }
 }
 
@@ -177,9 +128,10 @@ void app_main(void)
     if (tft_init(0, 0, &xsize, &ysize) < 0)
         return;
 
+    srand((unsigned) time(NULL));
     for (;;) {
         FillTest();
-        vTaskDelay(200);
+        vTaskDelay(50);
 
         ColorBarTest();
         vTaskDelay(200);
@@ -187,16 +139,7 @@ void app_main(void)
         LineTest();
         vTaskDelay(200);
 
-        CircleTest();
-        vTaskDelay(200);
-
         RoundRectTest();
-        vTaskDelay(200);
-
-        RectAngleTest();
-        vTaskDelay(200);
-
-        TriangleTest();
         vTaskDelay(200);
 
         FillRectTest();
