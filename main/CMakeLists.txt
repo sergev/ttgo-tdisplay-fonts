@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 idf_component_register(
     SRCS
         "st7789.c"
-        "draw.c"
+        "tft.c"
         "demo.c"
         "fonts/verdana8.c"
         "fonts/verdana10.c"
@@ -22,6 +22,10 @@ idf_component_register(
         "fonts/tahoma12.c"
         "fonts/tahoma14.c"
         "fonts/tahoma18.c"
+        "fonts/tahoma20.c"
+        "fonts/tahoma24.c"
+        "fonts/tahoma28.c"
+        "fonts/tahoma32.c"
         "fonts/tahoma8.c"
         "fonts/courier10.c"
         "fonts/courier12.c"

@@ -48,6 +48,10 @@ extern tft_font_t font_verdana18;
 
 extern tft_font_t font_tahoma14;
 extern tft_font_t font_tahoma18;
+extern tft_font_t font_tahoma20;
+extern tft_font_t font_tahoma24;
+extern tft_font_t font_tahoma28;
+extern tft_font_t font_tahoma32;
 
 extern tft_font_t font_georgia14;
 extern tft_font_t font_georgia18;
@@ -144,6 +148,13 @@ void app_main()
     for (;;) {
         printf("Screen size %u x %u.\n", xsize, ysize);
 
+        //show(&font_tahoma14, "Tahoma 14", 0);
+        show(&font_tahoma18, "Tahoma 18", 0);
+        show(&font_tahoma20, "Tahoma 20", 0);
+        show(&font_tahoma24, "Tahoma 24", 0);
+        show(&font_tahoma28, "Tahoma 28", 0);
+        show(&font_tahoma32, "Tahoma 32", 0);
+
         show(&font_lucidasans14, "Lucida Sans 14", 0);
         show(&font_lucidasans18, "Lucida Sans 18", 0);
         show(&font_lucidasans19, "Lucida Sans 19", 0);
@@ -154,9 +165,6 @@ void app_main()
         show(&font_lucidabright18, "Lucida Bright 18", 0);
         show(&font_lucidabright19, "Lucida Bright 19", 0);
         show(&font_lucidabright24, "Lucida Bright 24", 0);
-
-        show(&font_tahoma14, "Tahoma 14", 0);
-        show(&font_tahoma18, "Tahoma 18", 0);
 
         show(&font_verdana14, "Verdana 14", 0);
         show(&font_verdana18, "Verdana 18", 0);
