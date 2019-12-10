@@ -129,17 +129,22 @@ static void tft_send_addr(uint16_t addr1, uint16_t addr2)
     tft_send(data, 4);
 }
 
-static void tft_send_color(uint16_t color, uint16_t size)
+static void tft_send_image(const void *data, uint16_t npixels)
 {
-    uint8_t data[size * 2];
+    gpio_set_level(CONFIG_DC_GPIO, 1); // data mode
+    tft_send(data, npixels * 2);
+}
+
+static void tft_send_color(uint16_t color, uint16_t npixels)
+{
+    uint8_t data[npixels * 2];
     int index = 0;
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < npixels; i++) {
         data[index++] = (uint8_t)(color >> 8);
         data[index++] = (uint8_t)color;
     }
-    gpio_set_level(CONFIG_DC_GPIO, 1); // data mode
-    tft_send(data, size * 2);
+    tft_send_image(data, npixels);
 }
 
 static inline void mdelay(int ms)
@@ -252,9 +257,6 @@ int tft_init(int portrait, int color, int *xsize, int *ysize)
     // Power setting.
     tft_send_command(Cmd_VCOMS_Setting);
     tft_send_byte(0x28);                // JLX240 display datasheet
-
-    tft_send_command(Cmd_LCM_Control);
-    tft_send_byte(0x0C);
 
     tft_send_command(Cmd_VDV_VRH_Command_Enable);
     tft_send_byte(0x01);
@@ -436,6 +438,38 @@ void tft_invert(int on)
 }
 
 //
+// Draw an image.
+//
+void tft_image(int x, int y, int width, int height, const void *data)
+{
+    if (x + width > tft.width || y + height > tft.height)
+        return;
+
+    x += tft.offsetx;
+    y += tft.offsety;
+
+    // Loop on each image row.
+    const uint16_t *row = data;
+    for (int h=0; h<height; h++) {
+        uint16_t image[width];
+
+        // Loop on every pixel in the row (left to right).
+        for (int w=0; w<width; w++) {
+            image[w] = __builtin_bswap16(*row++);
+        }
+
+        tft_send_command(Cmd_Column_Address_Set);
+        tft_send_addr(x, x + width - 1);
+        tft_send_command(Cmd_Row_Address_Set);
+        tft_send_addr(y, y);
+        tft_send_command(Cmd_Memory_Write);
+        tft_send_image(image, width);
+
+        y++;
+    }
+}
+
+//
 // Draw a glyph of one symbol.
 //
 void tft_glyph(const tft_font_t *font,
@@ -464,7 +498,8 @@ void tft_glyph(const tft_font_t *font,
                 else
                     bitmask <<= 1;
 
-                image[w + h*width] = (bitmask & 0x8000) ? color : background;
+                int c = (bitmask & 0x8000) ? color : background;
+                image[w + h*width] = __builtin_bswap16(c);
             }
         }
 
@@ -476,9 +511,7 @@ void tft_glyph(const tft_font_t *font,
         tft_send_command(Cmd_Row_Address_Set);
         tft_send_addr(y, y + font->height - 1);
         tft_send_command(Cmd_Memory_Write);
-
-        gpio_set_level(CONFIG_DC_GPIO, 1); // data mode
-        tft_send((uint8_t*) image, npixels * 2);
+        tft_send_image(image, npixels);
     } else {
         //
         // Transparent background.

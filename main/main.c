@@ -12,38 +12,6 @@
 
 int xsize, ysize;
 
-void FillTest()
-{
-    tft_clear(COLOR_RED);
-    vTaskDelay(50);
-    tft_clear(COLOR_GREEN);
-    vTaskDelay(50);
-    tft_clear(COLOR_BLUE);
-}
-
-void ColorBarTest()
-{
-    if (xsize < ysize) {
-        uint16_t y1,y2;
-        y1 = ysize/3;
-        y2 = (ysize/3)*2;
-        tft_fill(COLOR_RED, 0, 0, xsize-1, y1-1);
-        vTaskDelay(1);
-        tft_fill(COLOR_GREEN, 0, y1-1, xsize-1, y2-1);
-        vTaskDelay(1);
-        tft_fill(COLOR_BLUE, 0, y2-1, xsize-1, ysize-1);
-    } else {
-        uint16_t x1,x2;
-        x1 = xsize/3;
-        x2 = (xsize/3)*2;
-        tft_fill(COLOR_RED, 0, 0, x1-1, ysize-1);
-        vTaskDelay(1);
-        tft_fill(COLOR_GREEN, x1-1, 0, x2-1, ysize-1);
-        vTaskDelay(1);
-        tft_fill(COLOR_BLUE, x2-1, 0, xsize-1, ysize-1);
-    }
-}
-
 void LineTest()
 {
     uint16_t color;
@@ -110,13 +78,25 @@ void ColorTest()
         COLOR_RGB(127, 127, 127),   // gray
         COLOR_RGB(255, 255, 255),   // white
     };
-    uint16_t delta = ysize/16;
-    uint16_t ypos = 0;
+    uint16_t delta = xsize/16;
+    uint16_t xpos = 0;
 
     tft_clear(COLOR_WHITE);
     for (int i = 0; i < 16; i++) {
-        tft_fill(color[i], 0, ypos, xsize-1, ypos+delta);
-        ypos += delta;
+        tft_fill(color[i], xpos, 0, xpos+delta, ysize-1);
+        xpos += delta;
+    }
+}
+
+void RGBTest()
+{
+    uint16_t delta = xsize/16;
+    uint16_t xpos = 0;
+
+    tft_clear(COLOR_BLACK);
+    for (int i = 0; i < 16; i++) {
+        tft_fill(0x8000 >> i, xpos, 0, xpos+delta, ysize-1);
+        xpos += delta;
     }
 }
 
@@ -130,10 +110,10 @@ void app_main(void)
 
     srand((unsigned) time(NULL));
     for (;;) {
-        FillTest();
-        vTaskDelay(50);
+        RGBTest();
+        vTaskDelay(200);
 
-        ColorBarTest();
+        ColorTest();
         vTaskDelay(200);
 
         LineTest();
@@ -143,9 +123,6 @@ void app_main(void)
         vTaskDelay(200);
 
         FillRectTest();
-        vTaskDelay(200);
-
-        ColorTest();
         vTaskDelay(200);
     }
 }

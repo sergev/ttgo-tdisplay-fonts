@@ -101,6 +101,19 @@ void setup_pins()
     gpio_set_pull_mode(PIN_BUTTON2, GPIO_PULLUP_ONLY);
 }
 
+void wait_button(int pin)
+{
+    // Wait for user button pressed (active low).
+    while (gpio_get_level(pin))
+        vTaskDelay(1);
+    gpio_set_level(PIN_BACKLIGHT, 0);
+
+    // Wait until user button released.
+    while (!gpio_get_level(pin))
+        vTaskDelay(1);
+    gpio_set_level(PIN_BACKLIGHT, 1);
+}
+
 void show(const tft_font_t *font, const char *title, int digits_only)
 {
     int x = 0, y = 0, i;
@@ -126,15 +139,7 @@ void show(const tft_font_t *font, const char *title, int digits_only)
     }
     tft_update();
 
-    // Wait for user button pressed (active low).
-    while (gpio_get_level(PIN_BUTTON1))
-        vTaskDelay(1);
-    gpio_set_level(PIN_BACKLIGHT, 0);
-
-    // Wait until user button released.
-    while (!gpio_get_level(PIN_BUTTON1))
-        vTaskDelay(1);
-    gpio_set_level(PIN_BACKLIGHT, 1);
+    wait_button(PIN_BUTTON1);
 }
 
 void app_main()

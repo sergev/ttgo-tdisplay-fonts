@@ -122,7 +122,10 @@ void tft_fill_triangle(int color, int x0, int y0, int x1, int y1, int x2, int y2
 //
 void tft_circle(int color, int x, int y, int radius);
 
-//TODO: void tft_image(int x, int y, int width, int height, const unsigned char *data);
+//
+// Draw an image.
+//
+void tft_image(int x, int y, int width, int height, const void *data);
 
 //
 // Draw one character from the specified font.
